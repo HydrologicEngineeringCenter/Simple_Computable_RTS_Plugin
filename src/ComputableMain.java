@@ -2,6 +2,7 @@ import com.rma.factories.NewObjectFactory;
 import hec2.map.GraphicElement;
 import hec2.model.DataLocation;
 import hec2.model.ProgramOrderItem;
+import hec2.plugin.CreatablePlugin;
 import hec2.plugin.action.EditAction;
 import hec2.plugin.action.OutputElement;
 import hec2.plugin.lang.ModelLinkingException;
@@ -14,7 +15,7 @@ import hec2.rts.ui.RtsTabType;
 
 import java.util.List;
 
-public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> implements RtsPlugin {
+public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> implements RtsPlugin, CreatablePlugin {
 
     public static final String PluginName = "Simple Computable Plugin";
     private static final String _pluginVersion = "1.0.0";
@@ -41,46 +42,59 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
 
     @Override
     protected ComputableAlt newAlternative(String s) {
-        return null;
+        return new ComputableAlt(s);
     }
 
     @Override
     protected String getAltFileExtension() {
-        return null;
+        return _pluginExtension;
     }
 
     @Override
     public String getPluginDirectory() {
-        return null;
+        return _pluginSubDirectory;
     }
 
     @Override
     protected NewObjectFactory getAltObjectFactory() {
-        return null;
+
+        return new ComputableAltFactory(this);
     }
 
     @Override
-    public boolean compute(ModelAlternative modelAlternative) {
+    public boolean compute(ModelAlternative ma) {
         return false;
     }
 
     @Override
-    public List<DataLocation> getDataLocations(ModelAlternative modelAlternative, int i) {
-        return null;
+    public List<DataLocation> getDataLocations(ModelAlternative ma, int i) {
+        ComputableAlt alt = getAlt(ma);
+        if (alt == null) return null;
+        if (DataLocation.INPUT_LOCATIONS == i) {
+            //input
+            return alt.getInputDataLocations();
+        } else {
+            //ouput
+            return alt.getOutputDataLocations();
+        }
     }
 
     @Override
-    public boolean setDataLocations(ModelAlternative modelAlternative, List<DataLocation> list) throws ModelLinkingException {
+    public boolean setDataLocations(ModelAlternative ma, List<DataLocation> list) throws ModelLinkingException {
+        ComputableAlt alt = getAlt(ma);
+        if(alt!=null){
+            return false;
+        }
         return false;
     }
 
     @Override
-    public List<GraphicElement> getGraphicElements(ModelAlternative modelAlternative) {
+    public List<GraphicElement> getGraphicElements(ModelAlternative ma) {
         return null;
     }
 
     @Override
-    public List<OutputElement> getOutputReports(ModelAlternative modelAlternative) {
+    public List<OutputElement> getOutputReports(ModelAlternative ma) {
         return null;
     }
 
@@ -95,18 +109,25 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
     }
 
     @Override
-    public List<EditAction> getEditActions(ModelAlternative modelAlternative) {
+    public List<EditAction> getEditActions(ModelAlternative ma) {
         return null;
     }
 
     @Override
-    public void editAction(String s, ModelAlternative modelAlternative) {
-
+    public void editAction(String s, ModelAlternative ma) {
     }
 
     @Override
     public boolean saveProject() {
-        return false;
+        boolean success = true;
+        for( ComputableAlt alt: _altList){
+            if(!alt.saveData()){
+                success = false;
+                System.out.println("Alternative "+ alt.getName()+ " could not save.");
+
+            }
+        }
+        return success;
     }
 
     @Override
@@ -116,11 +137,11 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
 
     @Override
     public String getVersion() {
-        return null;
+        return _pluginVersion;
     }
 
     @Override
-    public boolean copyModelFiles(ModelAlternative modelAlternative, String s, boolean b) {
+    public boolean copyModelFiles(ModelAlternative ma, String s, boolean b) {
         return false;
     }
 
