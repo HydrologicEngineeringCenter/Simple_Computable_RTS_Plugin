@@ -1,6 +1,11 @@
+import com.rma.io.DssFileManagerImpl;
 import com.rma.io.RmaFile;
+import hec.heclib.dss.HecDSSDataAttributes;
+import hec.io.DSSIdentifier;
+import hec.io.TimeSeriesContainer;
 import hec2.model.DataLocation;
 import hec2.plugin.PathnameUtilities;
+import hec2.plugin.model.ComputeOptions;
 import hec2.plugin.model.ModelAlternative;
 import hec2.plugin.selfcontained.SelfContainedPluginAlt;
 import org.jdom.Document;
@@ -8,6 +13,7 @@ import org.jdom.Element;
 import hec.heclib.dss.DSSPathname;
 
 
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +23,7 @@ public class ComputableAlt extends SelfContainedPluginAlt {
     private static final String DocumentRoot = "ComputableAlt";
     private static final String AlternativeNameAttribute = "Name";
     private static final String AlternativeDescriptionAttribute = "Desc";
+    private ComputeOptions _computeOptions;
 
     public ComputableAlt(){
         super();
@@ -72,15 +79,102 @@ public class ComputableAlt extends SelfContainedPluginAlt {
             return false;
         }
     }
+    public void setComputeOptions (ComputeOptions opts){
+        _computeOptions = opts;
+    }
 
     @Override
     public boolean isComputable() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean compute() {
+        boolean returnValue = true;
+        hec2.rts.model.ComputeOptions cco = (hec2.rts.model.ComputeOptions) _computeOptions;
+        double multiplier = 2.0;
+        String dssFilePath = cco.getDssFilename();
+        for (DataLocation dl : _dataLocations) {
+            String dssPath = dl.getLinkedToLocation().getDssPath();
+//            read input TS
+            TimeSeriesContainer tsc = ReadInputTS(dssFilePath, dssPath);
+//            multiply input data
+            TimeSeriesContainer output = UpdateTS(tsc, multiplier);
+//            write output data
+            if (!WriteOutTS(output, dl, dssFilePath)) {
+                returnValue = false;
+            }
+            return returnValue;
+        }
         return false;
+    }
+
+
+
+    private TimeSeriesContainer UpdateTS(TimeSeriesContainer tsc, double multiplier) {
+        TimeSeriesContainer outTSC = (TimeSeriesContainer)tsc.clone();
+        double[] vals = outTSC.values;
+        for (int i = 0; i < (vals.length); i++) {
+            vals[i] = vals[i] * multiplier;
+        }
+        outTSC.values = vals;
+        return outTSC;
+    }
+
+
+    private TimeSeriesContainer ReadInputTS(String DssFilePath, String dssPath) {
+        DSSPathname pathName = new DSSPathname(dssPath);
+        String InputFPart = pathName.getFPart();
+        DSSIdentifier eventDss = new DSSIdentifier(DssFilePath, pathName.getPathname());
+        eventDss.setStartTime(_computeOptions.getRunTimeWindow().getStartTime());
+        eventDss.setEndTime(_computeOptions.getRunTimeWindow().getEndTime());
+        int type = DssFileManagerImpl.getDssFileManager().getRecordType(eventDss);
+        if((HecDSSDataAttributes.REGULAR_TIME_SERIES<=type && type < HecDSSDataAttributes.PAIRED)){
+            boolean exist = DssFileManagerImpl.getDssFileManager().exists(eventDss);
+            TimeSeriesContainer eventTsc = null;
+            if (!exist )
+            {
+                try
+                {
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException e)
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+            eventTsc = DssFileManagerImpl.getDssFileManager().readTS(eventDss, true);
+            if ( eventTsc != null )
+            {
+                exist = eventTsc.numberValues > 0;
+            }
+            if(exist){
+                return eventTsc;
+            }else{
+                return null;
+            }
+        }else {
+            return null;
+        }
+
+    }
+    public boolean WriteOutTS(TimeSeriesContainer tsc, DataLocation dl, String dssFilePath){
+        DSSPathname pathname = new DSSPathname(dl.getDssPath());
+        pathname.setFPart(_computeOptions.getFpart());
+        DSSIdentifier eventDss = new DSSIdentifier(dssFilePath,pathname.getPathname());
+        eventDss.setStartTime(_computeOptions.getRunTimeWindow().getStartTime());
+        eventDss.setEndTime(_computeOptions.getRunTimeWindow().getEndTime());
+        tsc.fullName = pathname.getPathname();
+        tsc.fileName = _computeOptions.getDssFilename();
+        boolean exist = DssFileManagerImpl.getDssFileManager().exists(eventDss);
+        if(exist){
+            if(!_computeOptions.shouldForceCompute()){
+                return true;
+            }
+        }
+        return 0 == DssFileManagerImpl.getDssFileManager().write(tsc);
+
     }
 
     @Override
@@ -141,6 +235,34 @@ public class ComputableAlt extends SelfContainedPluginAlt {
 
     public List<DataLocation> getOutputDataLocations() {
         return defaultDataLocations();
+    }
+
+    public boolean setDataLocations(List<DataLocation> dataLocations) {
+        boolean retval = false;
+        for(DataLocation dl : dataLocations){
+            if(!_dataLocations.contains(dl)){
+                DataLocation linkedTo = dl.getLinkedToLocation();
+                String dssPath = linkedTo.getDssPath();
+                if(validLinkedToDssPath(dl))
+                {
+                    setModified(true);
+                    setDssParts(dl);
+                    _dataLocations.add(dl);
+                    retval = true;
+                }
+            }else{
+                DataLocation linkedTo = dl.getLinkedToLocation();
+                String dssPath = linkedTo.getDssPath();
+                if(validLinkedToDssPath(dl))
+                {
+                    setModified(true);
+                    setDssParts(dl);
+                    retval = true;
+                }
+            }
+        }
+        if(retval)saveData();
+        return retval;
     }
 }
 

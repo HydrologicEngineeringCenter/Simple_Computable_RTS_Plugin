@@ -63,6 +63,11 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
 
     @Override
     public boolean compute(ModelAlternative ma) {
+        ComputableAlt alt = getAlt(ma);
+        if(alt!=null){
+            alt.setComputeOptions(ma.getComputeOptions());
+            return alt.compute();
+        }
         return false;
     }
 
@@ -83,9 +88,9 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
     public boolean setDataLocations(ModelAlternative ma, List<DataLocation> list) throws ModelLinkingException {
         ComputableAlt alt = getAlt(ma);
         if(alt!=null){
-            return false;
+            return alt.setDataLocations(list);
         }
-        return false;
+        return true;
     }
 
     @Override
