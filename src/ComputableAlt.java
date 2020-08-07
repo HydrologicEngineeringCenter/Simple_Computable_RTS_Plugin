@@ -111,8 +111,8 @@ public class ComputableAlt extends SelfContainedPluginAlt {
 
 
 
-    private TimeSeriesContainer UpdateTS(TimeSeriesContainer tsc, double multiplier) {
-        TimeSeriesContainer outTSC = (TimeSeriesContainer)tsc.clone();
+    private TimeSeriesContainer UpdateTS(TimeSeriesContainer input, double multiplier) {
+        TimeSeriesContainer outTSC = (TimeSeriesContainer)input.clone();
         double[] vals = outTSC.values;
         for (int i = 0; i < (vals.length); i++) {
             vals[i] = vals[i] * multiplier;

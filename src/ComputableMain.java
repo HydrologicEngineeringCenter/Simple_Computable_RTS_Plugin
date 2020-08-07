@@ -17,7 +17,7 @@ import java.util.List;
 
 public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> implements RtsPlugin, CreatablePlugin {
 
-    public static final String PluginName = "Simple Computable Plugin";
+    public static final String PluginName = "SCP";
     private static final String _pluginVersion = "1.0.0";
     private static final String _pluginSubDirectory = "ComputablePlugin";
     private static final String _pluginExtension = ".scp";
@@ -32,7 +32,7 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
         setName(PluginName);
         setProgramOrderItem(new ProgramOrderItem(PluginName,
                 "A plugin constructed from the tutorial",
-                false, 1, "EMT", "Images/fda/wsp.png"));
+                false, 1, "EMT", "Images/riverware/png/WaterUser16.png"));
         RtsPluginManager.register(this);
     }
     @Override
