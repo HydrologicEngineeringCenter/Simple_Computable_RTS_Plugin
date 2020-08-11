@@ -11,8 +11,10 @@ import hec2.plugin.model.ModelAlternative;
 import hec2.plugin.selfcontained.AbstractSelfContainedPlugin;
 import hec2.rts.plugin.RtsPlugin;
 import hec2.rts.plugin.RtsPluginManager;
+import hec2.rts.plugin.action.ComputeModelAction;
 import hec2.rts.ui.RtsTabType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> implements RtsPlugin, CreatablePlugin {
@@ -123,7 +125,10 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
 
     @Override
     public List<EditAction> getEditActions(ModelAlternative ma) {
-        return null;
+        List<EditAction> actions = new ArrayList<EditAction>();
+        ComputeModelAction cation = new ComputeModelAction("Compute", PluginName, "computModel");
+        actions.add(cation);
+        return actions;
     }
 
     @Override
