@@ -98,15 +98,20 @@ public class ComputableAlt extends SelfContainedPluginAlt {
             String dssPath = dl.getLinkedToLocation().getDssPath();
 //            read input TS
             TimeSeriesContainer tsc = ReadInputTS(dssFilePath, dssPath);
+            if (tsc == null) {
+                addComputeErrorMessage("The DSS pathname provided " + dssPath + " was not found in " + dssFilePath);
+                return false;
+            }
 //            multiply input data
             TimeSeriesContainer output = UpdateTS(tsc, multiplier);
 //            write output data
+
             if (!WriteOutTS(output, dl, dssFilePath)) {
+                addComputeErrorMessage("Could not write to " + output.getFullName() + " in " + dssFilePath);
                 returnValue = false;
             }
-            return returnValue;
         }
-        return false;
+        return returnValue;
     }
 
 
@@ -129,6 +134,7 @@ public class ComputableAlt extends SelfContainedPluginAlt {
         eventDss.setStartTime(_computeOptions.getRunTimeWindow().getStartTime());
         eventDss.setEndTime(_computeOptions.getRunTimeWindow().getEndTime());
         int type = DssFileManagerImpl.getDssFileManager().getRecordType(eventDss);
+        addComputeMessage("Reading " + dssPath + " from" + DssFilePath);
         if((HecDSSDataAttributes.REGULAR_TIME_SERIES<=type && type < HecDSSDataAttributes.PAIRED)){
             boolean exist = DssFileManagerImpl.getDssFileManager().exists(eventDss);
             TimeSeriesContainer eventTsc = null;

@@ -64,11 +64,19 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
     @Override
     public boolean compute(ModelAlternative ma) {
         ComputableAlt alt = getAlt(ma);
-        if(alt!=null){
+        if (alt != null) {
             alt.setComputeOptions(ma.getComputeOptions());
+            if (_computeListeners != null && !_computeListeners.isEmpty()) {
+                for (int i = 0; i < _computeListeners.size(); i++) {
+                    alt.addComputeListener(_computeListeners.get(i));
+                }
+            }
             return alt.compute();
         }
-        return false;
+        else{
+            addComputeErrorMessage("Failed to find Alternative for " + ma);
+            return false;
+        }
     }
 
     @Override
