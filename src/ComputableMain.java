@@ -17,7 +17,7 @@ import hec2.rts.ui.RtsTabType;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> implements RtsPlugin {
+public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> implements RtsPlugin, CreatablePlugin {
 
     public static final String PluginName = "SCP";
     private static final String _pluginVersion = "1.0.0";
