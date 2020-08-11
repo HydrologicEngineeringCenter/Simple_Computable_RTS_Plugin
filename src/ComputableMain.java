@@ -18,10 +18,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> implements RtsPlugin, CreatablePlugin {
-
+//    cant have spaces in PluginName. PluginName will show in in model and forecast tree
     public static final String PluginName = "SCP";
     private static final String _pluginVersion = "1.0.0";
-    private static final String _pluginSubDirectory = "ComputablePlugin";
+//    this is the name of the directory model data will be stored (ex. rss)
+    private static final String _pluginSubDirectory = "scp";
+//    the extension for plugin files (like the alternative)
     private static final String _pluginExtension = ".scp";
 
     public static void main(String[] args) {
