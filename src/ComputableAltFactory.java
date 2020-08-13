@@ -9,14 +9,14 @@ import com.rma.util.I18n;
 import javax.swing.*;
 
 public class ComputableAltFactory extends AbstractNewObjectFactory implements NewObjectFactory {
-//    Need to modify this constructor later
     private ComputableMain _plugin;
     public ComputableAltFactory(ComputableMain plugin) {
+//      Call the constructor for parent, passing in I18n info
+//      getI18n() just creates a new instance i18n
         super(ComputableI18n.getI18n(ComputableMessages.Plugin_Name));
         _plugin = plugin;
     }
 
-    //    Need to add a constructor
     @Override
     public JComponent createNewObjectPanel() {
         GenericNewObjectPanel panel = new GenericNewObjectPanel();
@@ -41,7 +41,6 @@ public class ComputableAltFactory extends AbstractNewObjectFactory implements Ne
         _plugin.editAlternative(alt);
         alt.saveData();
         return alt;
-
     }
     @Override
     public void openObject(JComponent jc) {

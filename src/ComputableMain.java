@@ -36,7 +36,7 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
         setName(PluginName);
         setProgramOrderItem(new ProgramOrderItem(PluginName,
                 "A plugin constructed from the tutorial",
-                false, 1, "EMT", "Images/riverware/png/WaterUser16.png"));
+                false, 1, "SCP", "Images/riverware/png/WaterUser16.png"));
         RtsPluginManager.register(this);
     }
     @Override
@@ -61,7 +61,6 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
 
     @Override
     protected NewObjectFactory getAltObjectFactory() {
-
         return new ComputableAltFactory(this);
     }
 
@@ -144,7 +143,6 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
             if(!alt.saveData()){
                 success = false;
                 System.out.println("Alternative "+ alt.getName()+ " could not save.");
-
             }
         }
         return success;

@@ -3,7 +3,6 @@ import com.rma.util.I18n;
 import java.util.ResourceBundle;
 
 public class ComputableI18n extends I18n {
-//    String bundle name not consistent with WAT example because not working in a package.
     public static final String BUNDLE_NAME = "ComputableProperties";
     private static final ResourceBundle SAMPLE_RESOURCE_BUNDLE;
     private ResourceBundle _resourceBundle;
