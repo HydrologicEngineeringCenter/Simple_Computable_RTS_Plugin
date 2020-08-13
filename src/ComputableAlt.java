@@ -231,7 +231,6 @@ public class ComputableAlt extends SelfContainedPluginAlt {
         parts[1] = parts[1] + " Output";
         ModelAlternative malt = this.getModelAlt();
         malt.setProgram(ComputableMain.PluginName);
-        parts[5] = "C000000:" + _name + ":" + PathnameUtilities.getWatFPartModelPart(malt);
         p.setParts(parts);
         dl.setDssPath(p.getPathname());
     }
