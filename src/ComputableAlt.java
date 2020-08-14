@@ -4,7 +4,6 @@ import hec.heclib.dss.HecDSSDataAttributes;
 import hec.io.DSSIdentifier;
 import hec.io.TimeSeriesContainer;
 import hec2.model.DataLocation;
-import hec2.plugin.PathnameUtilities;
 import hec2.plugin.model.ComputeOptions;
 import hec2.plugin.model.ModelAlternative;
 import hec2.plugin.selfcontained.SelfContainedPluginAlt;
@@ -13,7 +12,6 @@ import org.jdom.Element;
 import hec.heclib.dss.DSSPathname;
 
 
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -91,22 +89,23 @@ public class ComputableAlt extends SelfContainedPluginAlt {
     @Override
     public boolean compute() {
         boolean returnValue = true;
-        hec2.rts.model.ComputeOptions cco = (hec2.rts.model.ComputeOptions) _computeOptions;
+//        is casting to hec2.rts.model.ComputeOptions required?_computeOptions is of type hec2.plugin.model.ComputeOptions
+//        hec2.rts.model.ComputeOptions extends hec2.plugin.model.ComputeOptions
+        hec2.rts.model.ComputeOptions cco = (hec2.rts.model.ComputeOptions)_computeOptions;
         double multiplier = 2.0;
         String dssFilePath = cco.getDssFilename();
         for (DataLocation dl : _dataLocations) {
             String dssPath = dl.getLinkedToLocation().getDssPath();
 //            read input TS
-            TimeSeriesContainer tsc = ReadInputTS(dssFilePath, dssPath);
+            TimeSeriesContainer tsc = readInputTS(dssFilePath, dssPath);
             if (tsc == null) {
                 addComputeErrorMessage("The DSS pathname provided " + dssPath + " was not found in " + dssFilePath);
                 return false;
             }
 //            multiply input data
-            TimeSeriesContainer output = UpdateTS(tsc, multiplier);
+            TimeSeriesContainer output = updateTS(tsc, multiplier);
 //            write output data
-
-            if (!WriteOutTS(output, dl, dssFilePath)) {
+            if (!writeOutTS(output, dl, dssFilePath)) {
                 addComputeErrorMessage("Could not write to " + output.getFullName() + " in " + dssFilePath);
                 returnValue = false;
             }
@@ -114,9 +113,44 @@ public class ComputableAlt extends SelfContainedPluginAlt {
         return returnValue;
     }
 
+    private TimeSeriesContainer readInputTS(String DssFilePath, String dssPath) {
+        DSSPathname pathName = new DSSPathname(dssPath);
+        String InputFPart = pathName.getFPart();
+        DSSIdentifier forecastDSS = new DSSIdentifier(DssFilePath, pathName.getPathname());
+        forecastDSS.setStartTime(_computeOptions.getRunTimeWindow().getStartTime());
+        forecastDSS.setEndTime(_computeOptions.getRunTimeWindow().getEndTime());
+        int type = DssFileManagerImpl.getDssFileManager().getRecordType(forecastDSS);
+        addComputeMessage("Reading " + dssPath + " from" + DssFilePath);
+        if((HecDSSDataAttributes.REGULAR_TIME_SERIES<=type && type < HecDSSDataAttributes.PAIRED)){
+            boolean exist = DssFileManagerImpl.getDssFileManager().exists(forecastDSS);
+            TimeSeriesContainer fcstTsc = null;
+            if (!exist )
+            {
+                try
+                {
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+            fcstTsc = DssFileManagerImpl.getDssFileManager().readTS(forecastDSS, true);
+            if ( fcstTsc != null )
+            {
+                exist = fcstTsc.numberValues > 0;
+            }
+            if(exist){
+                return fcstTsc;
+            }else{
+                return null;
+            }
+        }else {
+            return null;
+        }
+    }
 
-
-    private TimeSeriesContainer UpdateTS(TimeSeriesContainer input, double multiplier) {
+    private TimeSeriesContainer updateTS(TimeSeriesContainer input, double multiplier) {
         TimeSeriesContainer outTSC = (TimeSeriesContainer)input.clone();
         double[] vals = outTSC.values;
         for (int i = 0; i < (vals.length); i++) {
@@ -126,61 +160,21 @@ public class ComputableAlt extends SelfContainedPluginAlt {
         return outTSC;
     }
 
-
-    private TimeSeriesContainer ReadInputTS(String DssFilePath, String dssPath) {
-        DSSPathname pathName = new DSSPathname(dssPath);
-        String InputFPart = pathName.getFPart();
-        DSSIdentifier eventDss = new DSSIdentifier(DssFilePath, pathName.getPathname());
-        eventDss.setStartTime(_computeOptions.getRunTimeWindow().getStartTime());
-        eventDss.setEndTime(_computeOptions.getRunTimeWindow().getEndTime());
-        int type = DssFileManagerImpl.getDssFileManager().getRecordType(eventDss);
-        addComputeMessage("Reading " + dssPath + " from" + DssFilePath);
-        if((HecDSSDataAttributes.REGULAR_TIME_SERIES<=type && type < HecDSSDataAttributes.PAIRED)){
-            boolean exist = DssFileManagerImpl.getDssFileManager().exists(eventDss);
-            TimeSeriesContainer eventTsc = null;
-            if (!exist )
-            {
-                try
-                {
-                    Thread.sleep(1000);
-                }
-                catch (InterruptedException e)
-                {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-            eventTsc = DssFileManagerImpl.getDssFileManager().readTS(eventDss, true);
-            if ( eventTsc != null )
-            {
-                exist = eventTsc.numberValues > 0;
-            }
-            if(exist){
-                return eventTsc;
-            }else{
-                return null;
-            }
-        }else {
-            return null;
-        }
-
-    }
-    public boolean WriteOutTS(TimeSeriesContainer tsc, DataLocation dl, String dssFilePath){
+    public boolean writeOutTS(TimeSeriesContainer tsc, DataLocation dl, String dssFilePath){
         DSSPathname pathname = new DSSPathname(dl.getDssPath());
         pathname.setFPart(_computeOptions.getFpart());
-        DSSIdentifier eventDss = new DSSIdentifier(dssFilePath,pathname.getPathname());
-        eventDss.setStartTime(_computeOptions.getRunTimeWindow().getStartTime());
-        eventDss.setEndTime(_computeOptions.getRunTimeWindow().getEndTime());
+        DSSIdentifier forecastDSS = new DSSIdentifier(dssFilePath,pathname.getPathname());
+        forecastDSS.setStartTime(_computeOptions.getRunTimeWindow().getStartTime());
+        forecastDSS.setEndTime(_computeOptions.getRunTimeWindow().getEndTime());
         tsc.fullName = pathname.getPathname();
         tsc.fileName = _computeOptions.getDssFilename();
-        boolean exist = DssFileManagerImpl.getDssFileManager().exists(eventDss);
+        boolean exist = DssFileManagerImpl.getDssFileManager().exists(forecastDSS);
         if(exist){
             if(!_computeOptions.shouldForceCompute()){
                 return true;
             }
         }
         return 0 == DssFileManagerImpl.getDssFileManager().write(tsc);
-
     }
 
     @Override
@@ -204,6 +198,7 @@ public class ComputableAlt extends SelfContainedPluginAlt {
             for (DataLocation dl : _dataLocations) {
                 String dlparts = dl.getDssPath();
                 DSSPathname p = new DSSPathname(dlparts);
+//                I believe this if block is only initiated for output locations.
                 if (p.aPart().equals("") && p.bPart().equals("") && p.cPart().equals("") && p.dPart().equals("") && p.ePart().equals("") && p.fPart().equals("")) {
                     if (validLinkedToDssPath(dl)) {
                         setDssParts(dl);
@@ -234,14 +229,12 @@ public class ComputableAlt extends SelfContainedPluginAlt {
         p.setParts(parts);
         dl.setDssPath(p.getPathname());
     }
-        public List<DataLocation> getInputDataLocations() {
+    public List<DataLocation> getInputDataLocations() {
         return defaultDataLocations();
     }
-
     public List<DataLocation> getOutputDataLocations() {
         return defaultDataLocations();
     }
-
     public boolean setDataLocations(List<DataLocation> dataLocations) {
         boolean retval = false;
         for(DataLocation dl : dataLocations){
@@ -266,7 +259,7 @@ public class ComputableAlt extends SelfContainedPluginAlt {
                 }
             }
         }
-        if(retval)saveData();
+        if(retval){saveData();}
         return retval;
     }
 }

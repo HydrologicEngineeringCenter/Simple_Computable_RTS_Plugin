@@ -68,12 +68,14 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
     public boolean compute(ModelAlternative ma) {
         ComputableAlt alt = getAlt(ma);
         if (alt != null) {
+//            What is ths line doing?
             alt.setComputeOptions(ma.getComputeOptions());
             if (_computeListeners != null && !_computeListeners.isEmpty()) {
                 for (int i = 0; i < _computeListeners.size(); i++) {
                     alt.addComputeListener(_computeListeners.get(i));
                 }
             }
+            addComputeMessage("Starting Compute For "+ alt.getName());
             return alt.compute();
         }
         else{
@@ -90,7 +92,7 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
             //input
             return alt.getInputDataLocations();
         } else {
-            //ouput
+            //output
             return alt.getOutputDataLocations();
         }
     }
@@ -127,7 +129,7 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
     @Override
     public List<EditAction> getEditActions(ModelAlternative ma) {
         List<EditAction> actions = new ArrayList<EditAction>();
-        ComputeModelAction cation = new ComputeModelAction("Compute", PluginName, "computModel");
+        ComputeModelAction cation = new ComputeModelAction("Compute", PluginName, "computeModel");
         actions.add(cation);
         return actions;
     }
