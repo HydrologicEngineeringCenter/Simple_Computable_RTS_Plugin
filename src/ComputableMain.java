@@ -14,6 +14,11 @@ import hec2.rts.plugin.RtsPluginManager;
 import hec2.rts.plugin.action.ComputeModelAction;
 import hec2.rts.ui.RtsTabType;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -162,6 +167,25 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
 
     @Override
     public boolean copyModelFiles(ModelAlternative ma, String s, boolean b) {
+        if(b){
+            File srcdir = new File(s+"/" + _pluginSubDirectory);
+            File[] files = srcdir.listFiles();
+            File dest = new File (ma.getRunDirectory() +"/" + _pluginSubDirectory);
+            if(!dest.exists()){
+                dest.mkdir();
+            }
+            for (File file : files){
+                try {
+                    copyFile(file,dest);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return false;
+                }
+            }
+            return true;
+        }
+//        This will be else block when b == false
+//        In order for replace from base to work.
         return false;
     }
 
@@ -174,4 +198,13 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
     public boolean closeForecast(String s) {
         return false;
     }
+
+    public static void copyFile(File from, File to) throws IOException {
+        Path src = from.toPath();
+        File destfile = new File (to.getAbsolutePath() + "/" + src.getFileName());
+        Path destpath = destfile.toPath();
+        Files.copy(src, destpath);
+    }
+
+
 }
