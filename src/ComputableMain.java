@@ -18,7 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -167,16 +167,18 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
 
     @Override
     public boolean copyModelFiles(ModelAlternative ma, String s, boolean b) {
+        File base = new File(s+"/" + _pluginSubDirectory);
+        File fcst = new File (ma.getRunDirectory() +"/" + _pluginSubDirectory);
         if(b){
-            File srcdir = new File(s+"/" + _pluginSubDirectory);
-            File[] files = srcdir.listFiles();
-            File dest = new File (ma.getRunDirectory() +"/" + _pluginSubDirectory);
-            if(!dest.exists()){
-                dest.mkdir();
+//            for forecast creation and replace from base
+            if(!fcst.exists()){
+                fcst.mkdir();
             }
+            File[] files = base.listFiles();
             for (File file : files){
                 try {
-                    copyFile(file,dest);
+//                    TODO:  Need to add a check if file exists otherwise will have a file already exists exception
+                    copyFile(file,fcst);
                 } catch (IOException e) {
                     e.printStackTrace();
                     return false;
@@ -184,8 +186,20 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
             }
             return true;
         }
-//        This will be else block when b == false
-//        In order for replace from base to work.
+        if (!b){
+//            for copy to base
+            File[] files = fcst.listFiles();
+            for (File file : files) {
+                try {
+//                    TODO:  Need to add a check if file exists otherwise will have a file already exists exception
+                    copyFile(file, base);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return false;
+                }
+            }
+        }
+
         return false;
     }
 
@@ -203,7 +217,8 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
         Path src = from.toPath();
         File destfile = new File (to.getAbsolutePath() + "/" + src.getFileName());
         Path destpath = destfile.toPath();
-        Files.copy(src, destpath);
+        Files.copy(src, destpath, StandardCopyOption.REPLACE_EXISTING);
+
     }
 
 
