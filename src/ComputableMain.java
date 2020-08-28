@@ -13,14 +13,19 @@ import hec2.rts.plugin.RtsPlugin;
 import hec2.rts.plugin.RtsPluginManager;
 import hec2.rts.plugin.action.ComputeModelAction;
 import hec2.rts.ui.RtsTabType;
+import rma.util.RMAFilenameFilter;
+import rma.util.RMAIO;
+import com.rma.io.FileManagerImpl;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+
 
 public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> implements RtsPlugin, CreatablePlugin {
 //    cant have spaces in PluginName. PluginName will show in in model and forecast tree
@@ -167,40 +172,21 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
 
     @Override
     public boolean copyModelFiles(ModelAlternative ma, String s, boolean b) {
-        File base = new File(s+"/" + _pluginSubDirectory);
-        File fcst = new File (ma.getRunDirectory() +"/" + _pluginSubDirectory);
+        String source = RMAIO.concatPath(s, _pluginSubDirectory);
+        String dest;
+        RMAFilenameFilter filt = new RMAFilenameFilter("bak");
         if(b){
 //            for forecast creation and replace from base
-            if(!fcst.exists()){
-                fcst.mkdir();
-            }
-            File[] files = base.listFiles();
-            for (File file : files){
-                try {
-//                    TODO:  Need to add a check if file exists otherwise will have a file already exists exception
-                    copyFile(file,fcst);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return false;
-                }
-            }
+            dest = RMAIO.concatPath(ma.getRunDirectory(), getPluginDirectory());
+            FileManagerImpl.getFileManager().copyDirectory(source,dest,filt,null);
             return true;
-        }
-        if (!b){
-//            for copy to base
-            File[] files = fcst.listFiles();
-            for (File file : files) {
-                try {
-//                    TODO:  Need to add a check if file exists otherwise will have a file already exists exception
-                    copyFile(file, base);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return false;
-                }
             }
-        }
-
-        return false;
+        else {
+//            for copy to base
+            dest = getDirectory();
+                }
+        FileManagerImpl.getFileManager().copyDirectory(source,dest,filt,null);
+        return true;
     }
 
     @Override
@@ -212,14 +198,5 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
     public boolean closeForecast(String s) {
         return false;
     }
-
-    public static void copyFile(File from, File to) throws IOException {
-        Path src = from.toPath();
-        File destfile = new File (to.getAbsolutePath() + "/" + src.getFileName());
-        Path destpath = destfile.toPath();
-        Files.copy(src, destpath, StandardCopyOption.REPLACE_EXISTING);
-
-    }
-
 
 }
