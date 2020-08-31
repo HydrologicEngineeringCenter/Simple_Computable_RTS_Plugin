@@ -76,7 +76,7 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
 
     @Override
     public boolean compute(ModelAlternative ma) {
-        ComputableAlt alt = getAlt(ma);
+        ComputableAlt alt = getSimulationAlt(ma);
         if (alt != null) {
 //            What is ths line doing?
             alt.setComputeOptions(ma.getComputeOptions());
