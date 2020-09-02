@@ -1,4 +1,5 @@
 import com.rma.factories.NewObjectFactory;
+import com.rma.io.RmaFile;
 import hec2.map.GraphicElement;
 import hec2.model.DataLocation;
 import hec2.model.ProgramOrderItem;
@@ -7,6 +8,7 @@ import hec2.plugin.action.EditAction;
 import hec2.plugin.action.OutputElement;
 import hec2.plugin.lang.ModelLinkingException;
 import hec2.plugin.lang.OutputException;
+import hec2.plugin.model.ComputeOptions;
 import hec2.plugin.model.ModelAlternative;
 import hec2.plugin.selfcontained.AbstractSelfContainedPlugin;
 import hec2.rts.plugin.RtsPlugin;
@@ -28,12 +30,12 @@ import java.util.List;
 
 
 public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> implements RtsPlugin, CreatablePlugin {
-//    cant have spaces in PluginName. PluginName will show in in model and forecast tree
+    //    cant have spaces in PluginName. PluginName will show in in model and forecast tree
     public static final String PluginName = "SCP";
     private static final String _pluginVersion = "1.0.0";
-//    this is the name of the directory model data will be stored (ex. rss)
+    //    this is the name of the directory model data will be stored (ex. rss)
     private static final String _pluginSubDirectory = "scp";
-//    the extension for plugin files (like the alternative)
+    //    the extension for plugin files (like the alternative)
     private static final String _pluginExtension = ".scp";
 
     public static void main(String[] args) {
@@ -49,6 +51,7 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
                 false, 1, "SCP", "Images/riverware/png/WaterUser16.png"));
         RtsPluginManager.register(this);
     }
+
     @Override
     public void editAlternative(ComputableAlt computableAlt) {
 
@@ -85,10 +88,9 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
                     alt.addComputeListener(_computeListeners.get(i));
                 }
             }
-            addComputeMessage("Starting Compute For "+ alt.getName());
+            addComputeMessage("Starting Compute For " + alt.getName());
             return alt.compute();
-        }
-        else{
+        } else {
             addComputeErrorMessage("Failed to find Alternative for " + ma);
             return false;
         }
@@ -96,8 +98,18 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
 
     @Override
     public List<DataLocation> getDataLocations(ModelAlternative ma, int i) {
-        ComputableAlt alt = getAlt(ma);
-        if (alt == null) return null;
+        List<DataLocation> emplist = new ArrayList<>();
+        if (ma == null) {
+            System.out.println("getDataLocations: No ModelAlternative found");
+            return emplist;
+        }
+        ComputableAlt alt;
+        if (ma.getComputeOptions() != null) {
+            alt = getSimulationAlt(ma);
+        } else {
+            alt = getAlt(ma);
+        }
+//            For the case the alternative is in base
         if (DataLocation.INPUT_LOCATIONS == i) {
             //input
             return alt.getInputDataLocations();
@@ -109,11 +121,16 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
 
     @Override
     public boolean setDataLocations(ModelAlternative ma, List<DataLocation> list) throws ModelLinkingException {
-        ComputableAlt alt = getAlt(ma);
-        if(alt!=null){
+        ComputableAlt alt;
+        if (ma.getComputeOptions() != null) {
+            alt = getSimulationAlt(ma);
+        } else {
+            alt = getAlt(ma);
+        }
+        if (alt != null) {
             return alt.setDataLocations(list);
         }
-        return true;
+        return false;
     }
 
     @Override
@@ -151,10 +168,10 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
     @Override
     public boolean saveProject() {
         boolean success = true;
-        for( ComputableAlt alt: _altList){
-            if(!alt.saveData()){
+        for (ComputableAlt alt : _altList) {
+            if (!alt.saveData()) {
                 success = false;
-                System.out.println("Alternative "+ alt.getName()+ " could not save.");
+                System.out.println("Alternative " + alt.getName() + " could not save.");
             }
         }
         return success;
@@ -175,17 +192,16 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
         String source = RMAIO.concatPath(s, _pluginSubDirectory);
         String dest;
         RMAFilenameFilter filt = new RMAFilenameFilter("bak");
-        if(b){
+        if (b) {
 //            for forecast creation and replace from base
             dest = RMAIO.concatPath(ma.getRunDirectory(), getPluginDirectory());
-            FileManagerImpl.getFileManager().copyDirectory(source,dest,filt,null);
+            FileManagerImpl.getFileManager().copyDirectory(source, dest, filt, null);
             return true;
-            }
-        else {
+        } else {
 //            for copy to base
             dest = getDirectory();
-                }
-        FileManagerImpl.getFileManager().copyDirectory(source,dest,filt,null);
+        }
+        FileManagerImpl.getFileManager().copyDirectory(source, dest, filt, null);
         return true;
     }
 
@@ -199,4 +215,21 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
         return false;
     }
 
+    public ComputableAlt getSimulationAlt(ModelAlternative ma) {
+        ComputableAlt alt = getAlt(ma);
+        String altName = ma.getName();
+        ComputeOptions co = ma.getComputeOptions();
+        RmaFile file = alt.getFile();
+        String runDir = getRunDirectory(co);
+        String name = file.getName();
+        String runPath = runDir.concat(RmaFile.separator).concat(name);
+        RmaFile runFile = FileManagerImpl.getFileManager().getFile(runPath);
+        ComputableAlt simAlt = newAlternative(runFile.getAbsolutePath());
+        simAlt.setFile(runFile);
+        simAlt.setProject(alt.getProject());
+        simAlt.setName(altName);
+        simAlt.readData();
+        return simAlt;
+
+    }
 }
