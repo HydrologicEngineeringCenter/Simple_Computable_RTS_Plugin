@@ -109,7 +109,6 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
         } else {
             alt = getAlt(ma);
         }
-//            For the case the alternative is in base
         if (DataLocation.INPUT_LOCATIONS == i) {
             //input
             return alt.getInputDataLocations();
@@ -216,13 +215,25 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
     }
 
     public ComputableAlt getSimulationAlt(ModelAlternative ma) {
-        ComputableAlt alt = getAlt(ma);
-        String altName = ma.getName();
+        if (ma == null)
+        {
+            return null;
+        }
         ComputeOptions co = ma.getComputeOptions();
+        if (co == null)
+        {
+            return null;
+        }
+        ComputableAlt alt = getAlt(ma);
+        if (alt == null)
+        {
+            return null;
+        }
+        String altName = ma.getName();
         RmaFile file = alt.getFile();
         String runDir = getRunDirectory(co);
-        String name = file.getName();
-        String runPath = runDir.concat(RmaFile.separator).concat(name);
+        String fname = file.getName();
+        String runPath = runDir.concat(RmaFile.separator).concat(fname);
         RmaFile runFile = FileManagerImpl.getFileManager().getFile(runPath);
         ComputableAlt simAlt = newAlternative(runFile.getAbsolutePath());
         simAlt.setFile(runFile);
