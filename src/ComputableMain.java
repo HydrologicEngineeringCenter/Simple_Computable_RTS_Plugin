@@ -18,6 +18,9 @@ import hec2.rts.ui.RtsTabType;
 import rma.util.RMAFilenameFilter;
 import rma.util.RMAIO;
 import com.rma.io.FileManagerImpl;
+import hec2.rts.plugin.AbstractSelfContainedRtsPlugin;
+
+
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -81,7 +84,6 @@ public class ComputableMain extends AbstractSelfContainedPlugin<ComputableAlt> i
     public boolean compute(ModelAlternative ma) {
         ComputableAlt alt = getSimulationAlt(ma);
         if (alt != null) {
-//            What is ths line doing?
             alt.setComputeOptions(ma.getComputeOptions());
             if (_computeListeners != null && !_computeListeners.isEmpty()) {
                 for (int i = 0; i < _computeListeners.size(); i++) {
